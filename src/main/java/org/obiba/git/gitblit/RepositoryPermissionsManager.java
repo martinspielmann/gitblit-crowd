@@ -9,13 +9,6 @@
  ******************************************************************************/
 package org.obiba.git.gitblit;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.Version;
@@ -23,6 +16,13 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.gitblit.models.TeamModel;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Manages repository permissions. Serializes a map of repository name to list
@@ -38,10 +38,6 @@ class RepositoryPermissionsManager {
 
    private final Collection<TeamModel> teamModels;
 
-   public Collection<TeamModel> getTeamModels() {
-      return teamModels;
-   }
-
    RepositoryPermissionsManager(final File store) {
       if (store == null)
          throw new IllegalArgumentException("store cannot be null");
@@ -52,6 +48,10 @@ class RepositoryPermissionsManager {
       module.addDeserializer(PersistableTeamModel.class, new TeamModelDeserializer());
       mapper.registerModule(module);
 
+   }
+
+   public Collection<TeamModel> getTeamModels() {
+      return teamModels;
    }
 
    synchronized List<String> repoTeams(final String repository) {
@@ -83,17 +83,17 @@ class RepositoryPermissionsManager {
       return new ArrayList<TeamModel>();
    }
 
-   public void updateTeamModels(final Collection<TeamModel> models) {
+    public void updateTeamModels(final Collection<TeamModel> models) {
       try {
          ArrayList<TeamModel> tmpModels = new ArrayList<>(teamModels);
          tmpModels.forEach(t -> {
-            models.forEach(teamToSave -> {
-               if (t.name.equals(teamToSave.name)) {
-                  teamModels.remove(t);
-               }
-               teamModels.add(teamToSave);
-            } );
-         } );
+             models.forEach(teamToSave -> {
+                 if (t.name.equals(teamToSave.name)) {
+                     teamModels.remove(t);
+                 }
+                 teamModels.add(teamToSave);
+             });
+         });
          mapper.writeValue(store, teamModels);
       } catch (JsonGenerationException e) {
          e.printStackTrace();
@@ -102,6 +102,6 @@ class RepositoryPermissionsManager {
       } catch (IOException e) {
          e.printStackTrace();
       }
-   }
+    }
 
 }
