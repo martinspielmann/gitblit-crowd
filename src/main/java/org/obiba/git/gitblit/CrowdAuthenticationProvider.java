@@ -1,4 +1,14 @@
+/*
+ *
+ */
 package org.obiba.git.gitblit;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.wicket.protocol.http.WebRequestCycle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.atlassian.crowd.exception.ApplicationAccessDeniedException;
 import com.atlassian.crowd.exception.ApplicationPermissionException;
@@ -8,12 +18,6 @@ import com.atlassian.crowd.model.user.User;
 import com.gitblit.Constants.AccountType;
 import com.gitblit.auth.AuthenticationProvider.UsernamePasswordAuthenticationProvider;
 import com.gitblit.models.UserModel;
-import org.apache.wicket.protocol.http.WebRequestCycle;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * @author pingunaut (Martin Spielmann)
@@ -63,35 +67,35 @@ public class CrowdAuthenticationProvider extends UsernamePasswordAuthenticationP
 
     private User doCrowdauthenticate(final String username, final String passwd) throws CrowdException,
             ApplicationPermissionException {
-        WebRequestCycle requestCycle = (WebRequestCycle) WebRequestCycle.get();
+        final WebRequestCycle requestCycle = (WebRequestCycle) WebRequestCycle.get();
         if (requestCycle != null) {
             // Try an SSO authentication
-            HttpServletRequest request = requestCycle.getWebRequest().getHttpServletRequest();
-            HttpServletResponse response = requestCycle.getWebResponse().getHttpServletResponse();
+            final HttpServletRequest request = requestCycle.getWebRequest().getHttpServletRequest();
+            final HttpServletResponse response = requestCycle.getWebResponse().getHttpServletResponse();
             try {
-                return ExternalCrowdUserService.getCrowdAuthenticator().authenticate(request, response, username, passwd);
-            } catch (InvalidTokenException e) {
+                return CrowdConfigUserService.getCrowdAuthenticator().authenticate(request, response, username, passwd);
+            } catch (final InvalidTokenException e) {
                 // ignore
-            } catch (ApplicationAccessDeniedException e) {
+            } catch (final ApplicationAccessDeniedException e) {
                 // ignore
             }
         }
-        return ExternalCrowdUserService.getCrowdClient().authenticateUser(username, passwd);
+        return CrowdConfigUserService.getCrowdClient().authenticateUser(username, passwd);
     }
 
     @Override
     public UserModel authenticate(final String username, final char[] password) {
         try {
-            User crowdUser = doCrowdauthenticate(username, new String(password));
-            UserModel model = CrowdUtils.mapCrowdUserToModel(ExternalCrowdUserService.getCrowdClient(),
-                    ExternalCrowdUserService.getRepositoryManager(), crowdUser);
-            log.info("user {} successfully authenticated", username);
-            return model;
-        } catch (CrowdException e) {
+            final User crowdUser = this.doCrowdauthenticate(username, new String(password));
+            return this.userManager.getUserModel(crowdUser.getName());
+//            return new CrowdConfigUserService().getUserModel(crowdUser.getName());
+        } catch (final CrowdException e) {
             log.info("unable to authenticate user {}: {}", username, e.getMessage());
-        } catch (ApplicationPermissionException e) {
+        } catch (final ApplicationPermissionException e) {
             log.warn("unable to authenticate to crowd: {}", e.getMessage());
         }
         return null;
     }
+
+
 }

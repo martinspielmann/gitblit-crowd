@@ -1,4 +1,10 @@
+/*
+ *
+ */
 package org.obiba.git.gitblit;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 import com.atlassian.crowd.exception.ApplicationPermissionException;
 import com.atlassian.crowd.exception.InvalidAuthenticationException;
@@ -11,67 +17,83 @@ import com.gitblit.Constants.AccountType;
 import com.gitblit.models.TeamModel;
 import com.gitblit.models.UserModel;
 
-import java.util.List;
-
 public class CrowdUtils {
 
-    private CrowdUtils() {
+	private CrowdUtils() {
 
-    }
+	}
 
-    public static UserModel mapCrowdUserToModel(final CrowdClient client, final RepositoryPermissionsManager repo,
-                                                final User u) {
-        UserModel um = new UserModel(u.getName());
-        um.accountType = AccountType.EXTERNAL;
-        um.displayName = u.getDisplayName();
-        um.password = Constants.EXTERNAL_ACCOUNT;
-        um.emailAddress = u.getEmailAddress();
+	public static UserModel mapCrowdUserToModel(final CrowdClient client,
+			final User u, final CrowdConfigUserService crowdConfigUserService) {
+		return mapCrowdUserToModel(client, new UserModel(u.getName()), crowdConfigUserService);
+	}
 
-        try {
-            List<String> groups = client.getNamesOfGroupsForUser(u.getName(), 0, 1024);
-            um.canAdmin = groups.contains("administrators");
+	public static UserModel mapCrowdUserToModel(final CrowdClient client,
+			final UserModel um, final CrowdConfigUserService crowdConfigUserService) {
 
-            for (String g : groups) {
-                TeamModel teamModel = new TeamModel(g);
-                teamModel.accountType = AccountType.EXTERNAL;
-                um.teams.add(teamModel);
+		final User u = getUserByName(client, um.getName());
 
-                for (TeamModel repoTeam : repo.getTeamModels()) {
-                    if (teamModel.name.equals(repoTeam.name)) {
-                        teamModel.permissions.putAll(repoTeam.permissions);
-                        teamModel.canAdmin = repoTeam.canAdmin;
-                        teamModel.canCreate = repoTeam.canCreate;
-                        teamModel.canFork = repoTeam.canFork;
-                    }
-                }
-            }
-        } catch (UserNotFoundException e) {
-            e.printStackTrace();
-        } catch (OperationFailedException e) {
-            e.printStackTrace();
-        } catch (InvalidAuthenticationException e) {
-            e.printStackTrace();
-        } catch (ApplicationPermissionException e) {
-            e.printStackTrace();
-        }
+		um.accountType = AccountType.EXTERNAL;
+		um.displayName = u.getDisplayName();
+		um.password = Constants.EXTERNAL_ACCOUNT;
+		um.emailAddress = u.getEmailAddress();
 
-        return um;
-    }
+		try {
+			final List<String> groups = client.getNamesOfGroupsForUser(
+					u.getName(), 0, 1024);
+			um.canAdmin = groups.contains("crowd-administrators");
 
-    public static UserModel mapCrowdUserToModel(final CrowdClient client, final RepositoryPermissionsManager repo,
-                                                final String username) {
-        try {
-            User u = client.getUser(username);
-            return mapCrowdUserToModel(client, repo, u);
-        } catch (UserNotFoundException e) {
-            e.printStackTrace();
-        } catch (OperationFailedException e) {
-            e.printStackTrace();
-        } catch (ApplicationPermissionException e) {
-            e.printStackTrace();
-        } catch (InvalidAuthenticationException e) {
-            e.printStackTrace();
-        }
-        return new UserModel(username);
-    }
+			um.teams.clear();
+			um.teams.addAll(groups.stream().map(g-> {
+				final TeamModel t = new TeamModel(g);
+				return t;
+			}).collect(Collectors.toSet()));
+
+//			for (final String g : groups) {
+//				final TeamModel teamModel = new TeamModel(g);
+//				teamModel.accountType = AccountType.EXTERNAL;
+//				um.teams.add(teamModel);
+//
+//				for (final TeamModel repoTeam : CrowdConfigUserService.) {
+//					if (teamModel.name.equals(repoTeam.name)) {
+//						teamModel.permissions.putAll(repoTeam.permissions);
+//						teamModel.canAdmin = repoTeam.canAdmin;
+//						teamModel.canCreate = repoTeam.canCreate;
+//						teamModel.canFork = repoTeam.canFork;
+//					}
+//				}
+//			}
+		} catch (final UserNotFoundException e) {
+			e.printStackTrace();
+		} catch (final OperationFailedException e) {
+			e.printStackTrace();
+		} catch (final InvalidAuthenticationException e) {
+			e.printStackTrace();
+		} catch (final ApplicationPermissionException e) {
+			e.printStackTrace();
+		}
+
+		return um;
+	}
+
+	public static UserModel mapCrowdUserToModel(final CrowdClient client,
+			final String username, final CrowdConfigUserService crowdConfigUserService) {
+		return mapCrowdUserToModel(client, getUserByName(client, username), crowdConfigUserService);
+	}
+
+	private static User getUserByName(final CrowdClient client,
+			final String username) {
+		try {
+			return client.getUser(username);
+		} catch (final UserNotFoundException e) {
+			e.printStackTrace();
+		} catch (final OperationFailedException e) {
+			e.printStackTrace();
+		} catch (final ApplicationPermissionException e) {
+			e.printStackTrace();
+		} catch (final InvalidAuthenticationException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
 }
