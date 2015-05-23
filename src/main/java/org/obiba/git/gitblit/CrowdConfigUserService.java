@@ -42,7 +42,7 @@ public class CrowdConfigUserService extends ConfigUserService{
 	private static CrowdClient client;
     private static CrowdHttpAuthenticator authenticator;
 
-    private final List<String> adminGroups = new ArrayList<>();
+    public final List<String> adminGroups = new ArrayList<>();
 	private Integer syncInterval;
     private static final Logger log = LoggerFactory.getLogger(CrowdConfigUserService.class);
 
@@ -90,37 +90,48 @@ public class CrowdConfigUserService extends ConfigUserService{
             this.adminGroups.addAll(Arrays.asList(crowdProperties.getProperty("crowd.admingroups").split(",")));
             log.info("crowd groups with admin privileges {}", this.adminGroups);
 
-            this.syncInterval = Integer.valueOf(crowdProperties.getProperty("crowd.syncinterval", "15"));
+            this.syncInterval = Integer.valueOf(crowdProperties.getProperty("crowd.syncinterval", "60"));
 
 
 
             final Thread t = new Thread(new CrowdSyncJob(this));
             t.start();
+//            this.syncUsers();
         }
     }
 
 	public void syncUsers() {
-		log.info("syncing users");
+		log.info("syncing teams");
 		//initialize teams
 		this.getAllTeamNames().forEach(n -> {
 			TeamModel existingTeamModel = this.getTeamModel(n);
 			if(existingTeamModel==null){
 				existingTeamModel = new TeamModel(n);
 				existingTeamModel.accountType=AccountType.EXTERNAL;
-			}
-			existingTeamModel.canAdmin=this.adminGroups.contains(n);
-			this.updateTeamModel(existingTeamModel);
-		});
+				this.updateTeamModel(existingTeamModel);
 
+			}else if(existingTeamModel.canAdmin && !this.adminGroups.contains(n) ){
+				existingTeamModel.canAdmin=false;
+				this.updateTeamModel(existingTeamModel);
+			}else if(!existingTeamModel.canAdmin && this.adminGroups.contains(n) ){
+				existingTeamModel.canAdmin=true;
+				this.updateTeamModel(existingTeamModel);
+			}
+
+		});
+		log.info("syncing users");
         //initialize users
 		this.getAllUsernames().forEach(n -> {
 			final UserModel existingUserModel = this.getUserModel(n);
 			if(existingUserModel==null){
 				this.updateUserModel(CrowdUtils.mapCrowdUserToModel(client, n, this));
 			}else{
-				this.updateUserModel(n, CrowdUtils.mapCrowdUserToModel(client, existingUserModel, this));
+				if(!CrowdUtils.userEqual(client, existingUserModel, n)) {
+					this.updateUserModel(n, CrowdUtils.mapCrowdUserToModel(client, existingUserModel, this));
+				}
 			}
 		});
+		log.info("syncing finished");
 
 		try {
 			Thread.sleep(this.syncInterval * 60 * 1000);

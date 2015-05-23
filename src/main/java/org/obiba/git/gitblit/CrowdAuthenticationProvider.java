@@ -88,7 +88,6 @@ public class CrowdAuthenticationProvider extends UsernamePasswordAuthenticationP
         try {
             final User crowdUser = this.doCrowdauthenticate(username, new String(password));
             return this.userManager.getUserModel(crowdUser.getName());
-//            return new CrowdConfigUserService().getUserModel(crowdUser.getName());
         } catch (final CrowdException e) {
             log.info("unable to authenticate user {}: {}", username, e.getMessage());
         } catch (final ApplicationPermissionException e) {

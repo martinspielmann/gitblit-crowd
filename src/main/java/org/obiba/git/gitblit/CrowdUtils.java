@@ -3,8 +3,13 @@
  */
 package org.obiba.git.gitblit;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.apache.commons.lang.StringUtils;
 
 import com.atlassian.crowd.exception.ApplicationPermissionException;
 import com.atlassian.crowd.exception.InvalidAuthenticationException;
@@ -38,41 +43,14 @@ public class CrowdUtils {
 		um.password = Constants.EXTERNAL_ACCOUNT;
 		um.emailAddress = u.getEmailAddress();
 
-		try {
-			final List<String> groups = client.getNamesOfGroupsForUser(
-					u.getName(), 0, 1024);
-			um.canAdmin = groups.contains("crowd-administrators");
+			final List<String> groups = CrowdUtils.getUserGroups(client, um.getName());
+			um.canAdmin = !Collections.disjoint(groups, crowdConfigUserService.adminGroups);
 
 			um.teams.clear();
 			um.teams.addAll(groups.stream().map(g-> {
 				final TeamModel t = new TeamModel(g);
 				return t;
 			}).collect(Collectors.toSet()));
-
-//			for (final String g : groups) {
-//				final TeamModel teamModel = new TeamModel(g);
-//				teamModel.accountType = AccountType.EXTERNAL;
-//				um.teams.add(teamModel);
-//
-//				for (final TeamModel repoTeam : CrowdConfigUserService.) {
-//					if (teamModel.name.equals(repoTeam.name)) {
-//						teamModel.permissions.putAll(repoTeam.permissions);
-//						teamModel.canAdmin = repoTeam.canAdmin;
-//						teamModel.canCreate = repoTeam.canCreate;
-//						teamModel.canFork = repoTeam.canFork;
-//					}
-//				}
-//			}
-		} catch (final UserNotFoundException e) {
-			e.printStackTrace();
-		} catch (final OperationFailedException e) {
-			e.printStackTrace();
-		} catch (final InvalidAuthenticationException e) {
-			e.printStackTrace();
-		} catch (final ApplicationPermissionException e) {
-			e.printStackTrace();
-		}
-
 		return um;
 	}
 
@@ -95,5 +73,38 @@ public class CrowdUtils {
 			e.printStackTrace();
 		}
 		return null;
+	}
+
+	private static List<String> getUserGroups(final CrowdClient client, final String user){
+		try {
+			final List<String> groups = client.getNamesOfGroupsForUser(user, 0, 1024);
+				return groups;
+		} catch (final UserNotFoundException e) {
+			e.printStackTrace();
+		} catch (final OperationFailedException e) {
+			e.printStackTrace();
+		} catch (final InvalidAuthenticationException e) {
+			e.printStackTrace();
+		} catch (final ApplicationPermissionException e) {
+			e.printStackTrace();
+		}
+		return new ArrayList<>();
+	}
+
+	public static boolean userEqual(final CrowdClient client, final UserModel um, final String remoteUserName) {
+		final User remoteUser = CrowdUtils.getUserByName(client, remoteUserName);
+		final List<String> remoteUserGroups = CrowdUtils.getUserGroups(client, remoteUserName);
+
+
+		return StringUtils.equals(um.displayName, remoteUser.getDisplayName())
+					&& StringUtils.equals(um.emailAddress, remoteUser.getEmailAddress())
+					&& teamsEqual(um.teams, remoteUserGroups);
+	}
+
+	private static boolean teamsEqual(final Set<TeamModel> teams, final List<String> remoteTeams){
+		final List<String> collect = teams.stream().map(t->t.name).collect(Collectors.toList());
+		Collections.sort(collect);
+		Collections.sort(remoteTeams);
+		return collect.equals(remoteTeams);
 	}
 }
