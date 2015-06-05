@@ -13,10 +13,10 @@ Features
 * Uses Crowd groups as GitBlit teams
 * Allows defining which Crowd group(s) have GitBlit admin privileges
 
-SSO
----
+Usage
+-----
+Usage is described in a blog post: [gitblit-crowd plugin](https://pingunaut.com/weblog/index.php/2015/06/05/gitblit-crowd-plugin/)
 
-Crowd's single sign-on works fine (login and logout) with versions 1.0-0 and up.
 
 Why can't I add/edit users and teams from GitBlit?
 --------------------------------------------------
