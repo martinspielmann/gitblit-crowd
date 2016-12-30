@@ -15,7 +15,7 @@ Features
 
 Usage
 -----
-Usage is described in a blog post: [gitblit-crowd plugin](https://pingunaut.com/blog/gitblit-crowd-plugin/)
+Usage is described in a blog post: [gitblit-crowd-plugin](https://pseudorandombullshitgenerator.com/posts/gitblit-crowd-plugin)
 
 
 Why can't I add/edit users and teams from GitBlit?

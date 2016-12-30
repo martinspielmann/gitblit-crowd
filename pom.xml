@@ -6,9 +6,9 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>org.obiba.git</groupId>
-	<artifactId>gitblit-crowd</artifactId>
-	<version>1.622</version>
+	<groupId>com.pingunaut.gritblit</groupId>
+	<artifactId>gitblit-crowd-plugin</artifactId>
+	<version>1.8.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<licenses>
@@ -19,21 +19,21 @@
 	</licenses>
 
 	<scm>
-		<connection>scm:git:git@github.com:plaflamme/gitblit-crowd.git</connection>
-		<url>https://github.com/plaflamme/gitblit-crowd</url>
-		<developerConnection>scm:git:git@github.com:plaflamme/gitblit-crowd.git</developerConnection>
+		<connection>scm:git:git@github.com:pingunaut/gitblit-crowd.git</connection>
+		<url>https://github.com/pingunaut/gitblit-crowd</url>
+		<developerConnection>scm:git:git@github.com:pingunaut/gitblit-crowd.git</developerConnection>
 	</scm>
 
 	<properties>
-		<maven.compiler.target>1.8</maven.compiler.target>
-		<maven.compiler.source>1.8</maven.compiler.source>
+		<java.version>1.8</java.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
-		<gitblit.version>1.6.2</gitblit.version>
+		<gitblit.version>1.8.0</gitblit.version>
+		<!-- latest crowd client version does not work because of a conflicting version of http-client -->
+<!-- 		<crowd.version>2.10.1</crowd.version> -->
 		<crowd.version>2.5.3</crowd.version>
-		<xstream.version>1.4.2</xstream.version>
 		<slf4j.version>1.6.1</slf4j.version>
-		<wicket.version>1.4.20</wicket.version>
+		<wicket.version>1.4.22</wicket.version>
+		<jackson.version>2.8.5</jackson.version>
 	</properties>
 
 
@@ -73,8 +73,7 @@
 			<version>${slf4j.version}</version>
 			<scope>provided</scope>
 		</dependency>
-		<!-- Used to obtain the HttpServletRequest and Response during authentication. 
-			Used for SSO. -->
+		<!-- Used to obtain the HttpServletRequest and Response during authentication. Used for SSO. -->
 		<dependency>
 			<groupId>org.apache.wicket</groupId>
 			<artifactId>wicket</artifactId>
@@ -82,47 +81,43 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>javax.servlet</groupId>
-			<artifactId>servlet-api</artifactId>
-			<version>2.5</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<version>2.5.1</version>
+			<version>${jackson.version}</version>
+		</dependency>
+
+		<!-- Test dependencies -->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.12</version>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-core</artifactId>
-			<version>2.5.1</version>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-all</artifactId>
+			<version>1.10.19</version>
+			<scope>test</scope>
 		</dependency>
-
-        <!-- Test dependencies -->
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.12</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-all</artifactId>
-            <version>1.10.19</version>
-            <scope>test</scope>
-        </dependency>
-
 	</dependencies>
 
 	<build>
 		<plugins>
 			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.6.0</version>
+				<configuration>
+					<source>${java.version}</source>
+					<target>${java.version}</target>
+				</configuration>
+			</plugin>
+			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
-				<version>2.3</version>
+				<version>3.0.0</version>
 				<executions>
 					<execution>
 						<goals>
-							<goal>assembly</goal>
+							<goal>single</goal>
 						</goals>
 						<phase>package</phase>
 						<configuration>
@@ -135,7 +130,6 @@
 			</plugin>
 		</plugins>
 	</build>
-
 
 	<repositories>
 		<repository>
