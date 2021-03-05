@@ -50,6 +50,7 @@ public class CrowdConfigUserService extends ConfigUserService {
 
     public CrowdConfigUserService(final IRuntimeManager runtimeManager) {
         super(runtimeManager.getFileOrFolder("${baseFolder}/users.conf"));
+        LOG.info("CrowdConfigUserService created");
     }
 
     private Properties loadCrowdProperties(final Path crowdPropertiesFile) {
